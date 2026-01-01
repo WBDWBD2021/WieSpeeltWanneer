@@ -109,6 +109,7 @@ const Matches: React.FC = () => {
       setSelectedMatches([]);
     } catch (error) {
       console.error('Fout bij het laden van wedstrijden:', error);
+      alert('Fout bij laden wedstrijden. Check console.');
     }
   };
 

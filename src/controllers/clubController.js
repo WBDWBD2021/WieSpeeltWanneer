@@ -3,7 +3,9 @@ const Club = require('../models/Club');
 // Haal alle clubs op
 exports.getAllClubs = async (req, res) => {
     try {
+        console.log(`[clubController] getAllClubs called`);
         const clubs = await Club.find().sort({ naam: 1 });
+        console.log(`[clubController] Found ${clubs.length} clubs`);
         res.json(clubs);
     } catch (error) {
         console.error('Fout bij ophalen clubs:', error);

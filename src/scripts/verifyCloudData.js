@@ -17,10 +17,23 @@ const verify = async () => {
 
         const playerCount = await Player.countDocuments();
         const teamCount = await Team.countDocuments();
+        const props = await require('../models/Match').find({}, 'status datum');
+
+        const insights = props.reduce((acc, curr) => {
+            const year = new Date(curr.datum).getFullYear();
+            const status = curr.status || 'unknown';
+
+            acc.years[year] = (acc.years[year] || 0) + 1;
+            acc.statuses[status] = (acc.statuses[status] || 0) + 1;
+            return acc;
+        }, { years: {}, statuses: {} });
 
         console.log('---------------------------');
-        console.log(`✅ Spelers in Cloud: ${playerCount}`);
-        console.log(`✅ Teams in Cloud:   ${teamCount}`);
+        console.log(`✅ Spelers in Cloud:    ${playerCount}`);
+        console.log(`✅ Teams in Cloud:      ${teamCount}`);
+        console.log(`✅ Totaal:      ${props.length}`);
+        console.log('📅 Jaren:', JSON.stringify(insights.years));
+        console.log('📊 Statuses:', JSON.stringify(insights.statuses));
         console.log('---------------------------');
 
     } catch (err) {

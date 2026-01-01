@@ -60,7 +60,9 @@ const Clubs: React.FC = () => {
   const fetchClubs = async () => {
     try {
       setLoading(true);
+      console.log('Fetching clubs...');
       const response = await clubApi.getAll();
+      console.log('Fetched clubs response:', response);
       setClubs(response.data);
     } catch (error) {
       console.error('Error fetching clubs:', error);
@@ -211,6 +213,7 @@ const Clubs: React.FC = () => {
       });
 
       const newClubs = Array.from(foundClubs.entries()).map(([naam, team]) => ({ naam, team }));
+      console.log('Potential clubs found for import:', newClubs);
       setAvailableClubs(newClubs);
       setSelectedImportClubs(newClubs.map(c => c.naam));
       setImportDialogOpen(true);

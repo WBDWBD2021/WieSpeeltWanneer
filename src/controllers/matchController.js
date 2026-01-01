@@ -15,6 +15,8 @@ exports.getMatches = async (req, res) => {
             .populate('team')
             .populate('competitie')
             .sort({ datum: 1, tijd: 1 });
+
+        console.log(`[matchController] Found ${matches.length} matches`);
         res.json(matches);
     } catch (error) {
         console.error('Fout bij ophalen wedstrijden:', error);

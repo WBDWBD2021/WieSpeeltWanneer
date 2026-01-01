@@ -14,11 +14,13 @@ import SportsTennisIcon from '@mui/icons-material/SportsTennis';
 import PeopleIcon from '@mui/icons-material/People';
 import BusinessIcon from '@mui/icons-material/Business';
 
-const menuItems = [
+export const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
   { text: 'Wedstrijden', icon: <SportsTennisIcon />, path: '/wedstrijden' },
   { text: 'Spelers', icon: <PeopleIcon />, path: '/spelers' },
-  { text: 'Clubs & Teams', icon: <BusinessIcon />, path: '/clubs' },
+  { text: 'Clubs', icon: <BusinessIcon />, path: '/clubs' },
+  { text: 'Teams', icon: <PeopleIcon />, path: '/teams' },
+  { text: 'Competities', icon: <SportsTennisIcon />, path: '/competities' },
 ];
 
 const Navigation: React.FC = () => {
