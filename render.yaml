@@ -3,10 +3,12 @@ services:
     name: tennis-team-manager-backend
     env: node
     plan: free
-    buildCommand: npm install
+    buildCommand: npm run build
     startCommand: npm start
     envVars:
       - key: MONGODB_URI
         sync: false
       - key: PORT
         value: 10000
+      - key: REACT_APP_API_URL
+        value: https://tennis-team-manager-backend.onrender.com/api
