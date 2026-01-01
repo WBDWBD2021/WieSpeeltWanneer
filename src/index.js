@@ -8,6 +8,11 @@ const playerRoutes = require('./routes/playerRoutes');
 const matchRoutes = require('./routes/matchRoutes');
 const availabilityRoutes = require('./routes/availabilityRoutes');
 const importRoutes = require('./routes/importRoutes');
+const connectDB = require('./config/db');
+
+// Connect to Database
+connectDB();
+
 const app = express();
 
 // Middleware
