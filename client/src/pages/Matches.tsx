@@ -91,6 +91,9 @@ const Matches: React.FC = () => {
   const [selectedMatches, setSelectedMatches] = useState<string[]>([]);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
 
+  const [orderBy, setOrderBy] = useState<keyof Match>('datum');
+  const [orderDirection, setOrderDirection] = useState<'asc' | 'desc'>('asc');
+
   // Genereer competitie opties voor meerdere jaren
   const currentYear = new Date().getFullYear();
   const years = [currentYear - 1, currentYear, currentYear + 1, currentYear + 2];
@@ -275,6 +278,12 @@ const Matches: React.FC = () => {
     }
   };
 
+  const handleSortRequest = (property: keyof Match) => {
+    const isAsc = orderBy === property && orderDirection === 'asc';
+    setOrderDirection(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
+  };
+
   const filterWedstrijden = (competitie: 'voorjaar' | 'najaar' | 'winter' | 'zomeravond' | 'alle') => {
     let filtered = wedstrijden;
 
@@ -295,9 +304,32 @@ const Matches: React.FC = () => {
 
     // Sorteer op datum (nieuwste eerst voor gepland, oudste eerst voor afgerond)
     return filtered.sort((a, b) => {
-      const dateA = new Date(a.datum).getTime();
-      const dateB = new Date(b.datum).getTime();
-      return dateB - dateA;
+      let valueA: any = a[orderBy];
+      let valueB: any = b[orderBy];
+
+      if (orderBy === 'datum') {
+        valueA = new Date(a.datum).getTime();
+        valueB = new Date(b.datum).getTime();
+      }
+
+      // Handle undefined/null values safely
+      if (valueA === undefined || valueA === null) return 1;
+      if (valueB === undefined || valueB === null) return -1;
+
+      // Case insensitive check for strings
+      if (typeof valueA === 'string' && typeof valueB === 'string') {
+        return orderDirection === 'asc'
+          ? valueA.localeCompare(valueB)
+          : valueB.localeCompare(valueA);
+      }
+
+      if (valueA < valueB) {
+        return orderDirection === 'asc' ? -1 : 1;
+      }
+      if (valueA > valueB) {
+        return orderDirection === 'asc' ? 1 : -1;
+      }
+      return 0;
     });
   };
 
@@ -375,7 +407,7 @@ const Matches: React.FC = () => {
         )}
 
         <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
             <Typography variant="body2" color="text.secondary">
               <FilterListIcon sx={{ verticalAlign: 'middle', mr: 0.5 }} />
               Filter status:
@@ -390,6 +422,26 @@ const Matches: React.FC = () => {
               <ToggleButton value="afgerond">Afgerond</ToggleButton>
               <ToggleButton value="geannuleerd">X</ToggleButton>
             </ToggleButtonGroup>
+
+            {isMobile && (
+              <FormControl size="small" sx={{ minWidth: 150 }}>
+                <InputLabel>Sorteer op</InputLabel>
+                <Select
+                  value={`${orderBy}-${orderDirection}`}
+                  label="Sorteer op"
+                  onChange={(e) => {
+                    const [newOrderBy, newOrderDir] = e.target.value.split('-');
+                    setOrderBy(newOrderBy as keyof Match);
+                    setOrderDirection(newOrderDir as 'asc' | 'desc');
+                  }}
+                >
+                  <MenuItem value="datum-asc">Datum (Oud-Nieuw)</MenuItem>
+                  <MenuItem value="datum-desc">Datum (Nieuw-Oud)</MenuItem>
+                  <MenuItem value="status-asc">Status (A-Z)</MenuItem>
+                  <MenuItem value="status-desc">Status (Z-A)</MenuItem>
+                </Select>
+              </FormControl>
+            )}
           </Box>
 
           {selectedMatches.length > 0 && (
@@ -428,8 +480,8 @@ const Matches: React.FC = () => {
                       backgroundColor: statusNietCorrect ? 'warning.light' : 'inherit'
                     }}
                   >
-                    <CardContent>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                    <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                         <Typography variant="caption" color="text.secondary">
                           {date.toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short' })} • {wedstrijd.tijd}
                         </Typography>
@@ -438,28 +490,29 @@ const Matches: React.FC = () => {
                         )}
                       </Box>
 
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                         <Box sx={{ flex: 1 }}>
-                          <Typography variant="subtitle1" fontWeight={wedstrijd.isThuis ? 'bold' : 'normal'}>
+                          <Typography variant="subtitle1" component="div" fontWeight={wedstrijd.isThuis ? 'bold' : 'normal'} sx={{ lineHeight: 1.2 }}>
                             {wedstrijd.thuisteam}
                           </Typography>
-                          <Typography variant="subtitle1" fontWeight={!wedstrijd.isThuis ? 'bold' : 'normal'}>
+                          <Typography variant="subtitle1" component="div" fontWeight={!wedstrijd.isThuis ? 'bold' : 'normal'} sx={{ lineHeight: 1.2 }}>
                             {wedstrijd.uitteam}
                           </Typography>
                         </Box>
 
-                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
                           <Chip
                             label={wedstrijd.status}
                             size="small"
                             color={statusNietCorrect ? 'warning' : 'default'}
                             variant="outlined"
+                            sx={{ height: 24, fontSize: '0.75rem' }}
                           />
                         </Box>
                       </Box>
 
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pt: 1, borderTop: 1, borderColor: 'divider' }}>
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="caption" color="text.secondary" noWrap sx={{ maxWidth: '60%' }}>
                           {wedstrijd.locatie}
                         </Typography>
                         <Box>
@@ -467,6 +520,7 @@ const Matches: React.FC = () => {
                             size="small"
                             color="primary"
                             onClick={(e) => handleEditClick(wedstrijd, e)}
+                            sx={{ p: 0.5 }}
                           >
                             <EditIcon fontSize="small" />
                           </IconButton>
@@ -474,6 +528,7 @@ const Matches: React.FC = () => {
                             size="small"
                             color="error"
                             onClick={(e) => handleDeleteClick(wedstrijd, e)}
+                            sx={{ p: 0.5 }}
                           >
                             <DeleteIcon fontSize="small" />
                           </IconButton>
@@ -497,13 +552,13 @@ const Matches: React.FC = () => {
                       onChange={() => handleSelectAll(gefilterdWedstrijden)}
                     />
                   </TableCell>
-                  <TableCell>Datum</TableCell>
+                  <TableCell onClick={() => handleSortRequest('datum')} sx={{ cursor: 'pointer', fontWeight: 'bold' }}>Datum {orderBy === 'datum' && (orderDirection === 'asc' ? '↑' : '↓')}</TableCell>
                   <TableCell>Tijd</TableCell>
-                  <TableCell>Thuisteam</TableCell>
-                  <TableCell>Uitteam</TableCell>
+                  <TableCell onClick={() => handleSortRequest('thuisteam')} sx={{ cursor: 'pointer', fontWeight: 'bold' }}>Thuisteam {orderBy === 'thuisteam' && (orderDirection === 'asc' ? '↑' : '↓')}</TableCell>
+                  <TableCell onClick={() => handleSortRequest('uitteam')} sx={{ cursor: 'pointer', fontWeight: 'bold' }}>Uitteam {orderBy === 'uitteam' && (orderDirection === 'asc' ? '↑' : '↓')}</TableCell>
                   <TableCell>Locatie</TableCell>
                   {competitie === 'alle' && <TableCell>Competitie</TableCell>}
-                  <TableCell>Status</TableCell>
+                  <TableCell onClick={() => handleSortRequest('status')} sx={{ cursor: 'pointer', fontWeight: 'bold' }}>Status {orderBy === 'status' && (orderDirection === 'asc' ? '↑' : '↓')}</TableCell>
                   <TableCell>Acties</TableCell>
                 </TableRow>
               </TableHead>

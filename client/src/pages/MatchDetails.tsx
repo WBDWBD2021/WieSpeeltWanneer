@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Alert,
+  Snackbar,
   Box,
   Button,
   Card,
@@ -1057,6 +1058,20 @@ const MatchDetails: React.FC = () => {
     }
   };
 
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
+
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
+
+  const showSnackbar = (message: string, severity: 'success' | 'error' = 'success') => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
+  };
+
   if (!match) {
     return (
       <Container>
@@ -1104,11 +1119,13 @@ const MatchDetails: React.FC = () => {
 
       <Paper sx={{ p: 3, mb: 3 }}>
         {/* Team Taken / Roles Card */}
-        <Card sx={{ mb: 3 }}>
+        <Card sx={{ mb: 3, bgcolor: 'background.default' }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
               Team Taken
             </Typography>
+            {/* Show nice message if successful */}
+
             <Grid container spacing={3}>
               <Grid item xs={12} sm={6}>
                 <FormControl fullWidth>
@@ -1120,10 +1137,13 @@ const MatchDetails: React.FC = () => {
                       const val = e.target.value;
                       const field = match.isThuis ? 'hapjesVerzorger' : 'chauffeur';
                       try {
+                        // Immediately show explicit status
                         await wedstrijdApi.update(match._id, { [field]: val });
-                        loadData();
+                        await loadData();
+                        showSnackbar('Rol succesvol opgeslagen! ✅');
                       } catch (err) {
                         console.error('Failed to update role', err);
+                        showSnackbar('Fout bij opslaan rol.', 'error');
                       }
                     }}
                   >
@@ -1256,7 +1276,7 @@ const MatchDetails: React.FC = () => {
 
         <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
           <Box>
-            <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/dashboard')} sx={{ mb: 1 }}>
+            <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/wedstrijden')} sx={{ mb: 1 }}>
               Terug
             </Button>
             <Typography variant="h4" component="h1" fontWeight="bold" color="primary">
@@ -1372,7 +1392,6 @@ const MatchDetails: React.FC = () => {
                               <MenuItem
                                 key={speler._id}
                                 value={speler._id}
-                                // disabled={!validation.canAssign && speler._id !== speler1} // DISABLED REMOVED
                                 sx={{
                                   color: !validation.canAssign ? 'error.main' : playerColor,
                                   fontWeight: !isPlayerAvailable(speler._id) ? 'bold' : 'normal',
@@ -1424,7 +1443,6 @@ const MatchDetails: React.FC = () => {
                               <MenuItem
                                 key={speler._id}
                                 value={speler._id}
-                                // disabled={!validation.canAssign && speler._id !== speler2} // DISABLED REMOVED
                                 sx={{
                                   color: !validation.canAssign ? 'error.main' : playerColor,
                                   fontWeight: !isPlayerAvailable(speler._id) ? 'bold' : 'normal',
@@ -1539,6 +1557,11 @@ const MatchDetails: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      <Snackbar open={snackbarOpen} autoHideDuration={4000} onClose={handleSnackbarClose}>
+        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

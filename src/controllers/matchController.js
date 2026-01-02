@@ -30,7 +30,9 @@ exports.getMatch = async (req, res) => {
         const match = await Match.findById(req.params.id)
             .populate('posities.spelerId')
             .populate('chauffeur')
-            .populate('hapjesVerzorger');
+            .populate('hapjesVerzorger')
+            .populate('team')
+            .populate('competitie');
         if (!match) {
             return res.status(404).json({ message: 'Wedstrijd niet gevonden' });
         }
