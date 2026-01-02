@@ -15,7 +15,7 @@ const MobileNavigation: React.FC = () => {
     // Main navigation items for bottom bar
     const mainItems = [
         { label: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-        { label: 'Matches', icon: <SportsTennisIcon />, path: '/wedstrijden' },
+        { label: 'Wedstrijden', icon: <SportsTennisIcon />, path: '/wedstrijden' },
         { label: 'Spelers', icon: <PeopleIcon />, path: '/spelers' },
     ];
 

@@ -28,6 +28,9 @@ import {
   Select,
   Switch,
   Tab,
+  Stack,
+  useMediaQuery,
+  useTheme,
   Table,
   TableBody,
   TableCell,
@@ -74,6 +77,8 @@ function TabPanel(props: TabPanelProps) {
 const MatchDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [match, setMatch] = useState<Match | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
   const [availability, setAvailability] = useState<Availability[]>([]);
@@ -1131,6 +1136,7 @@ const MatchDetails: React.FC = () => {
                 <FormControl fullWidth>
                   <InputLabel>{match.isThuis ? 'Hapjes Verzorgen' : 'Chauffeur'}</InputLabel>
                   <Select
+                    native={isMobile}
                     value={(match.isThuis ? match.hapjesVerzorger : match.chauffeur) || ''}
                     label={match.isThuis ? 'Hapjes Verzorgen' : 'Chauffeur'}
                     onChange={async (e) => {
@@ -1147,12 +1153,23 @@ const MatchDetails: React.FC = () => {
                       }
                     }}
                   >
-                    <MenuItem value=""><em>Geen</em></MenuItem>
-                    {players.map((p) => (
-                      <MenuItem key={p._id} value={p._id}>
-                        {p.naam}
-                      </MenuItem>
-                    ))}
+                    {isMobile ? (
+                      <>
+                        <option value="">Geen</option>
+                        {players.map((p) => (
+                          <option key={p._id} value={p._id}>{p.naam}</option>
+                        ))}
+                      </>
+                    ) : (
+                      [
+                        <MenuItem key="none" value=""><em>Geen</em></MenuItem>,
+                        ...players.map((p) => (
+                          <MenuItem key={p._id} value={p._id}>
+                            {p.naam}
+                          </MenuItem>
+                        ))
+                      ]
+                    )}
                   </Select>
                 </FormControl>
               </Grid>
@@ -1183,80 +1200,154 @@ const MatchDetails: React.FC = () => {
       </Box>
 
       <TabPanel value={tabValue} index={0}>
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Speler</TableCell>
-                <TableCell>Niveau</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Acties</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {players.map((speler) => {
-                const beschikbaarheid = availability.find(avail => avail.player._id === speler._id);
-                const statusText = getStatusText(beschikbaarheid?.status);
-                const statusColor = getStatusColor(beschikbaarheid?.status);
+        {isMobile ? (
+          <Stack spacing={2}>
+            {players.map((speler) => {
+              const beschikbaarheid = availability.find(avail => avail.player._id === speler._id);
+              const statusText = getStatusText(beschikbaarheid?.status);
+              const statusColor = getStatusColor(beschikbaarheid?.status);
 
-                return (
-                  <TableRow key={speler._id}>
-                    <TableCell>{speler.naam}</TableCell>
-                    <TableCell>{speler.niveau}</TableCell>
-                    <TableCell>
+              return (
+                <Card key={speler._id} variant="outlined">
+                  <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                      <Typography variant="subtitle1" fontWeight="bold">
+                        {speler.naam}
+                      </Typography>
                       <Typography
-                        sx={{
-                          color: statusColor,
-                          fontWeight: 'bold'
-                        }}
+                        variant="body2"
+                        sx={{ color: statusColor, fontWeight: 'bold' }}
                       >
                         {statusText}
                       </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        size="small"
-                        onClick={() => handleAvailabilityChange(speler._id, 'available')}
-                        color="success"
-                        sx={{ mr: 1 }}
-                        variant={beschikbaarheid?.status === 'available' ? 'contained' : 'outlined'}
-                      >
-                        Beschikbaar
-                      </Button>
-                      <Button
-                        size="small"
-                        onClick={() => handleAvailabilityChange(speler._id, 'unavailable')}
-                        color="error"
-                        sx={{ mr: 1 }}
-                        variant={beschikbaarheid?.status === 'unavailable' ? 'contained' : 'outlined'}
-                      >
-                        Niet Beschikbaar
-                      </Button>
-                      <Button
-                        size="small"
-                        onClick={() => handleAvailabilityChange(speler._id, 'maybe')}
-                        color="warning"
-                        variant={beschikbaarheid?.status === 'maybe' ? 'contained' : 'outlined'}
-                      >
-                        Misschien
-                      </Button>
-                      <Button
-                        size="small"
-                        onClick={() => handleAvailabilityDelete(speler._id)}
-                        variant="outlined"
-                        color="inherit"
-                        sx={{ ml: 1, minWidth: 40 }}
-                        title="Wis beschikbaarheid"
-                      >
-                        X
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      Niveau: {speler.niveau}
+                    </Typography>
+
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button
+                          fullWidth
+                          size="small"
+                          onClick={() => handleAvailabilityChange(speler._id, 'available')}
+                          color="success"
+                          variant={beschikbaarheid?.status === 'available' ? 'contained' : 'outlined'}
+                        >
+                          Ja
+                        </Button>
+                        <Button
+                          fullWidth
+                          size="small"
+                          onClick={() => handleAvailabilityChange(speler._id, 'unavailable')}
+                          color="error"
+                          variant={beschikbaarheid?.status === 'unavailable' ? 'contained' : 'outlined'}
+                        >
+                          Nee
+                        </Button>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button
+                          fullWidth
+                          size="small"
+                          onClick={() => handleAvailabilityChange(speler._id, 'maybe')}
+                          color="warning"
+                          variant={beschikbaarheid?.status === 'maybe' ? 'contained' : 'outlined'}
+                        >
+                          ?
+                        </Button>
+                        <Button
+                          size="small"
+                          onClick={() => handleAvailabilityDelete(speler._id)}
+                          variant="outlined"
+                          color="inherit"
+                          sx={{ minWidth: 40 }}
+                        >
+                          X
+                        </Button>
+                      </Box>
+                    </Box>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </Stack>
+        ) : (
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Speler</TableCell>
+                  <TableCell>Niveau</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Acties</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {players.map((speler) => {
+                  const beschikbaarheid = availability.find(avail => avail.player._id === speler._id);
+                  const statusText = getStatusText(beschikbaarheid?.status);
+                  const statusColor = getStatusColor(beschikbaarheid?.status);
+
+                  return (
+                    <TableRow key={speler._id}>
+                      <TableCell>{speler.naam}</TableCell>
+                      <TableCell>{speler.niveau}</TableCell>
+                      <TableCell>
+                        <Typography
+                          sx={{
+                            color: statusColor,
+                            fontWeight: 'bold'
+                          }}
+                        >
+                          {statusText}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          size="small"
+                          onClick={() => handleAvailabilityChange(speler._id, 'available')}
+                          color="success"
+                          sx={{ mr: 1 }}
+                          variant={beschikbaarheid?.status === 'available' ? 'contained' : 'outlined'}
+                        >
+                          Beschikbaar
+                        </Button>
+                        <Button
+                          size="small"
+                          onClick={() => handleAvailabilityChange(speler._id, 'unavailable')}
+                          color="error"
+                          sx={{ mr: 1 }}
+                          variant={beschikbaarheid?.status === 'unavailable' ? 'contained' : 'outlined'}
+                        >
+                          Niet Beschikbaar
+                        </Button>
+                        <Button
+                          size="small"
+                          onClick={() => handleAvailabilityChange(speler._id, 'maybe')}
+                          color="warning"
+                          variant={beschikbaarheid?.status === 'maybe' ? 'contained' : 'outlined'}
+                        >
+                          Misschien
+                        </Button>
+                        <Button
+                          size="small"
+                          onClick={() => handleAvailabilityDelete(speler._id)}
+                          variant="outlined"
+                          color="inherit"
+                          sx={{ ml: 1, minWidth: 40 }}
+                          title="Wis beschikbaarheid"
+                        >
+                          X
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
       </TabPanel>
 
       <TabPanel value={tabValue} index={1}>
@@ -1309,172 +1400,109 @@ const MatchDetails: React.FC = () => {
           </Typography>
         </Alert>
 
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Wedstrijd</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Speler 1</TableCell>
-                <TableCell>Speler 2</TableCell>
-                <TableCell>Totale Sterkte</TableCell>
-                <TableCell>Acties</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {[
-                { nummer: 1, ronde: 'Ronde 1' },
-                { nummer: 2, ronde: 'Ronde 1' },
-                { nummer: 3, ronde: 'Ronde 2' },
-                { nummer: 4, ronde: 'Ronde 2' }
-              ].map(({ nummer: wedstrijdNummer, ronde }) => {
-                const wedstrijdPosities = match.posities?.filter(p => p.positie === wedstrijdNummer) || [];
+        {isMobile ? (
+          <Stack spacing={3}>
+            {[
+              { nummer: 1, ronde: 'Ronde 1' },
+              { nummer: 2, ronde: 'Ronde 1' },
+              { nummer: 3, ronde: 'Ronde 2' },
+              { nummer: 4, ronde: 'Ronde 2' }
+            ].map(({ nummer: wedstrijdNummer, ronde }) => {
+              const wedstrijdPosities = match.posities?.filter(p => p.positie === wedstrijdNummer) || [];
 
-                const getValidStringValue = (value: any): string => {
-                  if (!value) return '';
-                  if (typeof value === 'string') return value;
-                  if (typeof value === 'object' && value._id) return value._id.toString();
-                  return '';
-                };
+              const getValidStringValue = (value: any): string => {
+                if (!value) return '';
+                if (typeof value === 'string') return value;
+                if (typeof value === 'object' && value._id) return value._id.toString();
+                return '';
+              };
 
-                const speler1 = getValidStringValue(wedstrijdPosities.find(p => p.rol === 'enkel')?.spelerId);
-                const speler2 = getValidStringValue(wedstrijdPosities.find(p => p.rol === 'dubbel')?.spelerId);
-                const currentType = wedstrijdPosities[0]?.type || 'enkel';
-                const totalRanking = getMatchTotalRanking(wedstrijdNummer);
+              const speler1 = getValidStringValue(wedstrijdPosities.find(p => p.rol === 'enkel')?.spelerId);
+              const speler2 = getValidStringValue(wedstrijdPosities.find(p => p.rol === 'dubbel')?.spelerId);
+              const currentType = wedstrijdPosities[0]?.type || 'enkel';
+              const totalRanking = getMatchTotalRanking(wedstrijdNummer);
 
-                return (
-                  <TableRow key={wedstrijdNummer}>
-                    <TableCell>
-                      <Typography variant="body2" color="text.secondary">
+              return (
+                <Card key={wedstrijdNummer} variant="outlined">
+                  <CardContent>
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="overline" color="text.secondary" display="block" lineHeight={1}>
                         {ronde}
                       </Typography>
-                      <Typography variant="body1" fontWeight="bold">
+                      <Typography variant="h6" component="div">
                         Wedstrijd {wedstrijdNummer}
                       </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <FormControl fullWidth size="small">
-                        <Select
-                          value={currentType}
-                          onChange={(e) => handleMatchTypeChange(wedstrijdNummer, e.target.value as 'enkel' | 'dubbel' | 'gemengd')}
-                        >
-                          <MenuItem value="enkel">Enkel</MenuItem>
-                          <MenuItem value="dubbel">Dubbel</MenuItem>
-                          <MenuItem value="gemengd">Gemengd</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </TableCell>
-                    <TableCell>
-                      <FormControl
-                        fullWidth
-                        size="small"
-                        sx={{
-                          '& .MuiSelect-select': {
-                            color: speler1 ? getPlayerAvailabilityColor(speler1) : 'inherit',
-                            fontWeight: speler1 && !isPlayerAvailable(speler1) ? 'bold' : 'normal'
+                    </Box>
+
+                    <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+                      <InputLabel>Type</InputLabel>
+                      <Select
+                        native={true}
+                        value={currentType}
+                        label="Type"
+                        onChange={(e) => handleMatchTypeChange(wedstrijdNummer, e.target.value as 'enkel' | 'dubbel' | 'gemengd')}
+                      >
+                        <option value="enkel">Enkel</option>
+                        <option value="dubbel">Dubbel</option>
+                        <option value="gemengd">Gemengd</option>
+                      </Select>
+                    </FormControl>
+
+                    <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+                      <InputLabel>Speler 1</InputLabel>
+                      <Select
+                        native={true}
+                        value={speler1}
+                        label="Speler 1"
+                        onChange={(e) => {
+                          const newValue = e.target.value;
+                          if (typeof newValue === 'string') {
+                            handlePlayerAssignment(wedstrijdNummer, 1, newValue);
                           }
                         }}
                       >
-                        <Select
-                          value={speler1}
-                          onChange={(e) => {
-                            const newValue = e.target.value;
-                            if (typeof newValue === 'string') {
-                              handlePlayerAssignment(wedstrijdNummer, 1, newValue);
-                            }
-                          }}
-                        >
-                          <MenuItem value="">Selecteer speler</MenuItem>
-                          {players.map((speler) => {
-                            const validation = canAssignPlayer(wedstrijdNummer, 1, speler._id);
-                            const playerColor = getPlayerAvailabilityColor(speler._id);
-                            return (
-                              <MenuItem
-                                key={speler._id}
-                                value={speler._id}
-                                sx={{
-                                  color: !validation.canAssign ? 'error.main' : playerColor,
-                                  fontWeight: !isPlayerAvailable(speler._id) ? 'bold' : 'normal',
-                                  display: 'flex',
-                                  justifyContent: 'space-between'
-                                }}
-                              >
-                                <span>
-                                  {speler.naam} (Niv. {speler.niveau})
-                                  {getAvailabilityStatus(speler._id)}
-                                </span>
-                                {!validation.canAssign && (
-                                  <Typography variant="caption" color="error" sx={{ ml: 1, fontStyle: 'italic' }}>
-                                    ⚠️ {validation.reason}
-                                  </Typography>
-                                )}
-                              </MenuItem>
-                            );
-                          })}
-                        </Select>
-                      </FormControl>
-                    </TableCell>
-                    <TableCell>
-                      <FormControl
-                        fullWidth
-                        size="small"
-                        sx={{
-                          '& .MuiSelect-select': {
-                            color: speler2 ? getPlayerAvailabilityColor(speler2) : 'inherit',
-                            fontWeight: speler2 && !isPlayerAvailable(speler2) ? 'bold' : 'normal'
+                        <option value="">Selecteer speler</option>
+                        {players.map((speler) => {
+                          const validation = canAssignPlayer(wedstrijdNummer, 1, speler._id);
+                          return (
+                            <option key={speler._id} value={speler._id}>
+                              {speler.naam} (Niv. {speler.niveau}) {validation.canAssign ? '' : '⚠️'}
+                            </option>
+                          );
+                        })}
+                      </Select>
+                    </FormControl>
+
+                    <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+                      <InputLabel>Speler 2</InputLabel>
+                      <Select
+                        native={true}
+                        value={speler2}
+                        label="Speler 2"
+                        onChange={(e) => {
+                          const newValue = e.target.value;
+                          if (typeof newValue === 'string') {
+                            handlePlayerAssignment(wedstrijdNummer, 2, newValue);
                           }
                         }}
+                        disabled={currentType === 'enkel'}
                       >
-                        <Select
-                          value={speler2}
-                          onChange={(e) => {
-                            const newValue = e.target.value;
-                            if (typeof newValue === 'string') {
-                              handlePlayerAssignment(wedstrijdNummer, 2, newValue);
-                            }
-                          }}
-                          disabled={currentType === 'enkel'}
-                        >
-                          <MenuItem value="">Selecteer speler</MenuItem>
-                          {players.map((speler) => {
-                            const validation = canAssignPlayer(wedstrijdNummer, 2, speler._id);
-                            const playerColor = getPlayerAvailabilityColor(speler._id);
-                            return (
-                              <MenuItem
-                                key={speler._id}
-                                value={speler._id}
-                                sx={{
-                                  color: !validation.canAssign ? 'error.main' : playerColor,
-                                  fontWeight: !isPlayerAvailable(speler._id) ? 'bold' : 'normal',
-                                  display: 'flex',
-                                  justifyContent: 'space-between'
-                                }}
-                              >
-                                <span>
-                                  {speler.naam} (Niv. {speler.niveau})
-                                  {getAvailabilityStatus(speler._id)}
-                                </span>
-                                {!validation.canAssign && (
-                                  <Typography variant="caption" color="error" sx={{ ml: 1, fontStyle: 'italic' }}>
-                                    ⚠️ {validation.reason}
-                                  </Typography>
-                                )}
-                              </MenuItem>
-                            );
-                          })}
-                        </Select>
-                      </FormControl>
-                    </TableCell>
-                    <TableCell>
-                      <Typography
-                        variant="body2"
-                        fontWeight="bold"
-                        color={totalRanking > 0 ? 'primary' : 'text.secondary'}
-                      >
-                        {totalRanking > 0 ? totalRanking : '-'}
+                        <option value="">Selecteer speler</option>
+                        {players.map((speler) => {
+                          const validation = canAssignPlayer(wedstrijdNummer, 2, speler._id);
+                          return (
+                            <option key={speler._id} value={speler._id}>
+                              {speler.naam} (Niv. {speler.niveau}) {validation.canAssign ? '' : '⚠️'}
+                            </option>
+                          );
+                        })}
+                      </Select>
+                    </FormControl>
+
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pt: 1, borderTop: 1, borderColor: 'divider' }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Sterkte: <Box component="span" fontWeight="bold" color={totalRanking > 0 ? 'primary.main' : 'text.secondary'}>{totalRanking > 0 ? totalRanking : '-'}</Box>
                       </Typography>
-                    </TableCell>
-                    <TableCell>
                       <Button
                         size="small"
                         color="error"
@@ -1482,13 +1510,194 @@ const MatchDetails: React.FC = () => {
                       >
                         Wissen
                       </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                    </Box>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </Stack>
+        ) : (
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Wedstrijd</TableCell>
+                  <TableCell>Type</TableCell>
+                  <TableCell>Speler 1</TableCell>
+                  <TableCell>Speler 2</TableCell>
+                  <TableCell>Totale Sterkte</TableCell>
+                  <TableCell>Acties</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {[
+                  { nummer: 1, ronde: 'Ronde 1' },
+                  { nummer: 2, ronde: 'Ronde 1' },
+                  { nummer: 3, ronde: 'Ronde 2' },
+                  { nummer: 4, ronde: 'Ronde 2' }
+                ].map(({ nummer: wedstrijdNummer, ronde }) => {
+                  const wedstrijdPosities = match.posities?.filter(p => p.positie === wedstrijdNummer) || [];
+
+                  const getValidStringValue = (value: any): string => {
+                    if (!value) return '';
+                    if (typeof value === 'string') return value;
+                    if (typeof value === 'object' && value._id) return value._id.toString();
+                    return '';
+                  };
+
+                  const speler1 = getValidStringValue(wedstrijdPosities.find(p => p.rol === 'enkel')?.spelerId);
+                  const speler2 = getValidStringValue(wedstrijdPosities.find(p => p.rol === 'dubbel')?.spelerId);
+                  const currentType = wedstrijdPosities[0]?.type || 'enkel';
+                  const totalRanking = getMatchTotalRanking(wedstrijdNummer);
+
+                  return (
+                    <TableRow key={wedstrijdNummer}>
+                      <TableCell>
+                        <Typography variant="body2" color="text.secondary">
+                          {ronde}
+                        </Typography>
+                        <Typography variant="body1" fontWeight="bold">
+                          Wedstrijd {wedstrijdNummer}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <FormControl fullWidth size="small">
+                          <Select
+                            value={currentType}
+                            onChange={(e) => handleMatchTypeChange(wedstrijdNummer, e.target.value as 'enkel' | 'dubbel' | 'gemengd')}
+                          >
+                            <MenuItem value="enkel">Enkel</MenuItem>
+                            <MenuItem value="dubbel">Dubbel</MenuItem>
+                            <MenuItem value="gemengd">Gemengd</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </TableCell>
+                      <TableCell>
+                        <FormControl
+                          fullWidth
+                          size="small"
+                          sx={{
+                            '& .MuiSelect-select': {
+                              color: speler1 ? getPlayerAvailabilityColor(speler1) : 'inherit',
+                              fontWeight: speler1 && !isPlayerAvailable(speler1) ? 'bold' : 'normal'
+                            }
+                          }}
+                        >
+                          <Select
+                            value={speler1}
+                            onChange={(e) => {
+                              const newValue = e.target.value;
+                              if (typeof newValue === 'string') {
+                                handlePlayerAssignment(wedstrijdNummer, 1, newValue);
+                              }
+                            }}
+                          >
+                            <MenuItem value="">Selecteer speler</MenuItem>
+                            {players.map((speler) => {
+                              const validation = canAssignPlayer(wedstrijdNummer, 1, speler._id);
+                              const playerColor = getPlayerAvailabilityColor(speler._id);
+                              return (
+                                <MenuItem
+                                  key={speler._id}
+                                  value={speler._id}
+                                  sx={{
+                                    color: !validation.canAssign ? 'error.main' : playerColor,
+                                    fontWeight: !isPlayerAvailable(speler._id) ? 'bold' : 'normal',
+                                    display: 'flex',
+                                    justifyContent: 'space-between'
+                                  }}
+                                >
+                                  <span>
+                                    {speler.naam} (Niv. {speler.niveau})
+                                    {getAvailabilityStatus(speler._id)}
+                                  </span>
+                                  {!validation.canAssign && (
+                                    <Typography variant="caption" color="error" sx={{ ml: 1, fontStyle: 'italic' }}>
+                                      ⚠️ {validation.reason}
+                                    </Typography>
+                                  )}
+                                </MenuItem>
+                              );
+                            })}
+                          </Select>
+                        </FormControl>
+                      </TableCell>
+                      <TableCell>
+                        <FormControl
+                          fullWidth
+                          size="small"
+                          sx={{
+                            '& .MuiSelect-select': {
+                              color: speler2 ? getPlayerAvailabilityColor(speler2) : 'inherit',
+                              fontWeight: speler2 && !isPlayerAvailable(speler2) ? 'bold' : 'normal'
+                            }
+                          }}
+                        >
+                          <Select
+                            value={speler2}
+                            onChange={(e) => {
+                              const newValue = e.target.value;
+                              if (typeof newValue === 'string') {
+                                handlePlayerAssignment(wedstrijdNummer, 2, newValue);
+                              }
+                            }}
+                            disabled={currentType === 'enkel'}
+                          >
+                            <MenuItem value="">Selecteer speler</MenuItem>
+                            {players.map((speler) => {
+                              const validation = canAssignPlayer(wedstrijdNummer, 2, speler._id);
+                              const playerColor = getPlayerAvailabilityColor(speler._id);
+                              return (
+                                <MenuItem
+                                  key={speler._id}
+                                  value={speler._id}
+                                  sx={{
+                                    color: !validation.canAssign ? 'error.main' : playerColor,
+                                    fontWeight: !isPlayerAvailable(speler._id) ? 'bold' : 'normal',
+                                    display: 'flex',
+                                    justifyContent: 'space-between'
+                                  }}
+                                >
+                                  <span>
+                                    {speler.naam} (Niv. {speler.niveau})
+                                    {getAvailabilityStatus(speler._id)}
+                                  </span>
+                                  {!validation.canAssign && (
+                                    <Typography variant="caption" color="error" sx={{ ml: 1, fontStyle: 'italic' }}>
+                                      ⚠️ {validation.reason}
+                                    </Typography>
+                                  )}
+                                </MenuItem>
+                              );
+                            })}
+                          </Select>
+                        </FormControl>
+                      </TableCell>
+                      <TableCell>
+                        <Typography
+                          variant="body2"
+                          fontWeight="bold"
+                          color={totalRanking > 0 ? 'primary' : 'text.secondary'}
+                        >
+                          {totalRanking > 0 ? totalRanking : '-'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          size="small"
+                          color="error"
+                          onClick={() => handleClearMatch(wedstrijdNummer)}
+                        >
+                          Wissen
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
       </TabPanel>
 
       <Box sx={{ mt: 2 }}>
