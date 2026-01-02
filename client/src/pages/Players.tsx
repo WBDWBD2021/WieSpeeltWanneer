@@ -32,6 +32,9 @@ const Players: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
+  const [orderBy, setOrderBy] = useState<keyof Player>('naam');
+  const [orderDirection, setOrderDirection] = useState<'asc' | 'desc'>('asc');
+
   useEffect(() => {
     const laadSpelers = async () => {
       try {
@@ -44,6 +47,32 @@ const Players: React.FC = () => {
 
     laadSpelers();
   }, []);
+
+  const handleRequestSort = (property: keyof Player) => {
+    const isAsc = orderBy === property && orderDirection === 'asc';
+    setOrderDirection(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
+  };
+
+  const getSortedSpelers = () => {
+    return [...spelers].sort((a, b) => {
+      const valueA = a[orderBy];
+      const valueB = b[orderBy];
+
+      if (valueA === undefined || valueA === null) return 1;
+      if (valueB === undefined || valueB === null) return -1;
+
+      if (typeof valueA === 'string' && typeof valueB === 'string') {
+        return orderDirection === 'asc'
+          ? valueA.localeCompare(valueB)
+          : valueB.localeCompare(valueA);
+      }
+
+      if (valueA < valueB) return orderDirection === 'asc' ? -1 : 1;
+      if (valueA > valueB) return orderDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  };
 
   const getInitials = (name: string) => {
     return name
@@ -72,7 +101,7 @@ const Players: React.FC = () => {
 
       {isMobile ? (
         <Stack spacing={2}>
-          {spelers.map((speler) => (
+          {getSortedSpelers().map((speler) => (
             <Card
               key={speler._id}
               onClick={() => navigate(`/spelers/${speler._id}`)}
@@ -108,17 +137,27 @@ const Players: React.FC = () => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Naam</TableCell>
-                <TableCell>Club</TableCell>
+                <TableCell onClick={() => handleRequestSort('naam')} sx={{ cursor: 'pointer', fontWeight: 'bold' }}>
+                  Naam {orderBy === 'naam' && (orderDirection === 'asc' ? '↑' : '↓')}
+                </TableCell>
+                <TableCell onClick={() => handleRequestSort('club')} sx={{ cursor: 'pointer', fontWeight: 'bold' }}>
+                  Club {orderBy === 'club' && (orderDirection === 'asc' ? '↑' : '↓')}
+                </TableCell>
                 <TableCell>Email</TableCell>
                 <TableCell>Telefoon</TableCell>
-                <TableCell>Niveau</TableCell>
-                <TableCell>Geslacht</TableCell>
-                <TableCell>Status</TableCell>
+                <TableCell onClick={() => handleRequestSort('niveau')} sx={{ cursor: 'pointer', fontWeight: 'bold' }}>
+                  Niveau {orderBy === 'niveau' && (orderDirection === 'asc' ? '↑' : '↓')}
+                </TableCell>
+                <TableCell onClick={() => handleRequestSort('geslacht')} sx={{ cursor: 'pointer', fontWeight: 'bold' }}>
+                  Geslacht {orderBy === 'geslacht' && (orderDirection === 'asc' ? '↑' : '↓')}
+                </TableCell>
+                <TableCell onClick={() => handleRequestSort('isActief')} sx={{ cursor: 'pointer', fontWeight: 'bold' }}>
+                  Status {orderBy === 'isActief' && (orderDirection === 'asc' ? '↑' : '↓')}
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {spelers.map((speler) => (
+              {getSortedSpelers().map((speler) => (
                 <TableRow
                   key={speler._id}
                   hover

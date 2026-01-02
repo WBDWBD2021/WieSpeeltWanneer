@@ -101,9 +101,51 @@ const Teams: React.FC = () => {
 
     const [error, setError] = useState<string | null>(null);
 
+    const [orderBy, setOrderBy] = useState<keyof Team>('naam');
+    const [orderDirection, setOrderDirection] = useState<'asc' | 'desc'>('asc');
+
     useEffect(() => {
         loadData();
     }, []);
+
+    const handleRequestSort = (property: keyof Team) => {
+        const isAsc = orderBy === property && orderDirection === 'asc';
+        setOrderDirection(isAsc ? 'desc' : 'asc');
+        setOrderBy(property);
+    };
+
+    const getNameValue = (obj: any) => {
+        if (!obj) return '';
+        return typeof obj === 'object' ? obj.naam : obj;
+    };
+
+    const getSortedTeams = () => {
+        return [...teams].sort((a, b) => {
+            let valueA: any = a[orderBy];
+            let valueB: any = b[orderBy];
+
+            if (orderBy === 'club') {
+                valueA = getNameValue(a.club);
+                valueB = getNameValue(b.club);
+            } else if (orderBy === 'competitie') {
+                valueA = getNameValue(a.competitie);
+                valueB = getNameValue(b.competitie);
+            }
+
+            if (valueA === undefined || valueA === null) return 1;
+            if (valueB === undefined || valueB === null) return -1;
+
+            if (typeof valueA === 'string' && typeof valueB === 'string') {
+                return orderDirection === 'asc'
+                    ? valueA.localeCompare(valueB)
+                    : valueB.localeCompare(valueA);
+            }
+
+            if (valueA < valueB) return orderDirection === 'asc' ? -1 : 1;
+            if (valueA > valueB) return orderDirection === 'asc' ? 1 : -1;
+            return 0;
+        });
+    };
 
     const loadData = async () => {
         try {
@@ -237,15 +279,15 @@ const Teams: React.FC = () => {
                                     onChange={handleSelectAll}
                                 />
                             </TableCell>
-                            <TableCell><strong>Naam</strong></TableCell>
-                            <TableCell><strong>Club</strong></TableCell>
-                            <TableCell><strong>Competitie</strong></TableCell>
+                            <TableCell onClick={() => handleRequestSort('naam')} sx={{ cursor: 'pointer' }}><strong>Naam {orderBy === 'naam' && (orderDirection === 'asc' ? '↑' : '↓')}</strong></TableCell>
+                            <TableCell onClick={() => handleRequestSort('club')} sx={{ cursor: 'pointer' }}><strong>Club {orderBy === 'club' && (orderDirection === 'asc' ? '↑' : '↓')}</strong></TableCell>
+                            <TableCell onClick={() => handleRequestSort('competitie')} sx={{ cursor: 'pointer' }}><strong>Competitie {orderBy === 'competitie' && (orderDirection === 'asc' ? '↑' : '↓')}</strong></TableCell>
                             <TableCell><strong>Spelers</strong></TableCell>
                             <TableCell align="right"><strong>Acties</strong></TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {teams.map((team) => {
+                        {getSortedTeams().map((team) => {
                             const isSelected = selectedIds.indexOf(team._id) !== -1;
                             return (
                                 <TableRow
