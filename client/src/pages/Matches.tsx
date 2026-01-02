@@ -37,6 +37,11 @@ import {
   ToggleButton,
   Grid,
   Checkbox,
+  Card,
+  CardContent,
+  useMediaQuery,
+  useTheme,
+  Stack
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -340,6 +345,8 @@ const Matches: React.FC = () => {
   };
 
   const renderWedstrijdTable = (competitie: 'voorjaar' | 'najaar' | 'winter' | 'zomeravond' | 'alle') => {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const gefilterdWedstrijden = filterWedstrijden(competitie);
     const verkeerdStatussenCount = gefilterdWedstrijden.filter(heeftVerkeerdStatus).length;
 
@@ -397,108 +404,191 @@ const Matches: React.FC = () => {
           )}
         </Box>
 
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell padding="checkbox">
-                  <Checkbox
-                    checked={allSelected}
-                    indeterminate={indeterminate}
-                    onChange={() => handleSelectAll(gefilterdWedstrijden)}
-                  />
-                </TableCell>
-                <TableCell>Datum</TableCell>
-                <TableCell>Tijd</TableCell>
-                <TableCell>Thuisteam</TableCell>
-                <TableCell>Uitteam</TableCell>
-                <TableCell>Locatie</TableCell>
-                {competitie === 'alle' && <TableCell>Competitie</TableCell>}
-                <TableCell>Status</TableCell>
-                <TableCell>Acties</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {gefilterdWedstrijden.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={competitie === 'alle' ? 9 : 8} align="center">
-                    <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
-                      Geen wedstrijden gevonden voor deze filters
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                gefilterdWedstrijden.map((wedstrijd) => {
-                  const statusNietCorrect = heeftVerkeerdStatus(wedstrijd);
-                  const isSelected = selectedMatches.includes(wedstrijd._id);
+        {isMobile ? (
+          <Stack spacing={2}>
+            {gefilterdWedstrijden.length === 0 ? (
+              <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 3 }}>
+                Geen wedstrijden gevonden
+              </Typography>
+            ) : (
+              gefilterdWedstrijden.map((wedstrijd) => {
+                const statusNietCorrect = heeftVerkeerdStatus(wedstrijd);
+                const isSelected = selectedMatches.includes(wedstrijd._id);
+                const date = new Date(wedstrijd.datum);
 
-                  return (
-                    <TableRow
-                      key={wedstrijd._id}
-                      hover
-                      selected={isSelected}
-                      onClick={() => navigate(`/wedstrijden/${wedstrijd._id}`)}
-                      sx={{
-                        cursor: 'pointer',
-                        backgroundColor: statusNietCorrect ? 'warning.light' : 'inherit',
-                        '&:hover': {
-                          backgroundColor: statusNietCorrect ? 'warning.main' : undefined
-                        }
-                      }}
-                    >
-                      <TableCell padding="checkbox">
-                        <Checkbox
-                          checked={isSelected}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSelectMatch(wedstrijd._id);
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>{new Date(wedstrijd.datum).toLocaleDateString('nl-NL')}</TableCell>
-                      <TableCell>{wedstrijd.tijd}</TableCell>
-                      <TableCell>{wedstrijd.thuisteam}</TableCell>
-                      <TableCell>{wedstrijd.uitteam}</TableCell>
-                      <TableCell>{wedstrijd.locatie}</TableCell>
-                      {competitie === 'alle' && (
-                        <TableCell>{getCompetitieLabel(wedstrijd.competitie)}</TableCell>
-                      )}
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          {statusNietCorrect && (
-                            <WarningIcon color="warning" fontSize="small" />
-                          )}
+                return (
+                  <Card
+                    key={wedstrijd._id}
+                    onClick={() => navigate(`/wedstrijden/${wedstrijd._id}`)}
+                    sx={{
+                      cursor: 'pointer',
+                      borderColor: isSelected ? 'primary.main' : 'divider',
+                      borderWidth: isSelected ? 2 : 1,
+                      borderStyle: 'solid',
+                      backgroundColor: statusNietCorrect ? 'warning.light' : 'inherit'
+                    }}
+                  >
+                    <CardContent>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                        <Typography variant="caption" color="text.secondary">
+                          {date.toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short' })} • {wedstrijd.tijd}
+                        </Typography>
+                        {competitie === 'alle' && (
+                          <Box>{getCompetitieLabel(wedstrijd.competitie)}</Box>
+                        )}
+                      </Box>
+
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant="subtitle1" fontWeight={wedstrijd.isThuis ? 'bold' : 'normal'}>
+                            {wedstrijd.thuisteam}
+                          </Typography>
+                          <Typography variant="subtitle1" fontWeight={!wedstrijd.isThuis ? 'bold' : 'normal'}>
+                            {wedstrijd.uitteam}
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
                           <Chip
                             label={wedstrijd.status}
                             size="small"
                             color={statusNietCorrect ? 'warning' : 'default'}
+                            variant="outlined"
                           />
                         </Box>
-                      </TableCell>
-                      <TableCell>
-                        <IconButton
-                          color="primary"
-                          onClick={(e) => handleEditClick(wedstrijd, e)}
-                          size="small"
-                          sx={{ mr: 1 }}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton
-                          color="error"
-                          onClick={(e) => handleDeleteClick(wedstrijd, e)}
-                          size="small"
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                      </Box>
+
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pt: 1, borderTop: 1, borderColor: 'divider' }}>
+                        <Typography variant="body2" color="text.secondary">
+                          {wedstrijd.locatie}
+                        </Typography>
+                        <Box>
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            onClick={(e) => handleEditClick(wedstrijd, e)}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={(e) => handleDeleteClick(wedstrijd, e)}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
+          </Stack>
+        ) : (
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell padding="checkbox">
+                    <Checkbox
+                      checked={allSelected}
+                      indeterminate={indeterminate}
+                      onChange={() => handleSelectAll(gefilterdWedstrijden)}
+                    />
+                  </TableCell>
+                  <TableCell>Datum</TableCell>
+                  <TableCell>Tijd</TableCell>
+                  <TableCell>Thuisteam</TableCell>
+                  <TableCell>Uitteam</TableCell>
+                  <TableCell>Locatie</TableCell>
+                  {competitie === 'alle' && <TableCell>Competitie</TableCell>}
+                  <TableCell>Status</TableCell>
+                  <TableCell>Acties</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {gefilterdWedstrijden.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={competitie === 'alle' ? 9 : 8} align="center">
+                      <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
+                        Geen wedstrijden gevonden voor deze filters
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  gefilterdWedstrijden.map((wedstrijd) => {
+                    const statusNietCorrect = heeftVerkeerdStatus(wedstrijd);
+                    const isSelected = selectedMatches.includes(wedstrijd._id);
+
+                    return (
+                      <TableRow
+                        key={wedstrijd._id}
+                        hover
+                        selected={isSelected}
+                        onClick={() => navigate(`/wedstrijden/${wedstrijd._id}`)}
+                        sx={{
+                          cursor: 'pointer',
+                          backgroundColor: statusNietCorrect ? 'warning.light' : 'inherit',
+                          '&:hover': {
+                            backgroundColor: statusNietCorrect ? 'warning.main' : undefined
+                          }
+                        }}
+                      >
+                        <TableCell padding="checkbox">
+                          <Checkbox
+                            checked={isSelected}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectMatch(wedstrijd._id);
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>{new Date(wedstrijd.datum).toLocaleDateString('nl-NL')}</TableCell>
+                        <TableCell>{wedstrijd.tijd}</TableCell>
+                        <TableCell>{wedstrijd.thuisteam}</TableCell>
+                        <TableCell>{wedstrijd.uitteam}</TableCell>
+                        <TableCell>{wedstrijd.locatie}</TableCell>
+                        {competitie === 'alle' && (
+                          <TableCell>{getCompetitieLabel(wedstrijd.competitie)}</TableCell>
+                        )}
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {statusNietCorrect && (
+                              <WarningIcon color="warning" fontSize="small" />
+                            )}
+                            <Chip
+                              label={wedstrijd.status}
+                              size="small"
+                              color={statusNietCorrect ? 'warning' : 'default'}
+                            />
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <IconButton
+                            color="primary"
+                            onClick={(e) => handleEditClick(wedstrijd, e)}
+                            size="small"
+                            sx={{ mr: 1 }}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                          <IconButton
+                            color="error"
+                            onClick={(e) => handleDeleteClick(wedstrijd, e)}
+                            size="small"
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
       </>
     );
   };
