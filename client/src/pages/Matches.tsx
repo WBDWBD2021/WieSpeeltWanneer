@@ -84,6 +84,8 @@ const Matches: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string[]>(['gepland', 'in_behandeling']);
   const navigate = useNavigate();
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   // Bulk functionality state
   const [selectedMatches, setSelectedMatches] = useState<string[]>([]);
@@ -345,8 +347,6 @@ const Matches: React.FC = () => {
   };
 
   const renderWedstrijdTable = (competitie: 'voorjaar' | 'najaar' | 'winter' | 'zomeravond' | 'alle') => {
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const gefilterdWedstrijden = filterWedstrijden(competitie);
     const verkeerdStatussenCount = gefilterdWedstrijden.filter(heeftVerkeerdStatus).length;
 
