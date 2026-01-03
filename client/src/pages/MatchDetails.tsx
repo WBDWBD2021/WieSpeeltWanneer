@@ -1137,7 +1137,13 @@ const MatchDetails: React.FC = () => {
                   <InputLabel>{match.isThuis ? 'Hapjes Verzorgen' : 'Chauffeur'}</InputLabel>
                   <Select
                     native={isMobile}
-                    value={(match.isThuis ? match.hapjesVerzorger : match.chauffeur) || ''}
+                    value={(
+                      (match.isThuis ?
+                        (typeof match.hapjesVerzorger === 'object' ? (match.hapjesVerzorger as any)._id : match.hapjesVerzorger)
+                        :
+                        (typeof match.chauffeur === 'object' ? (match.chauffeur as any)._id : match.chauffeur)
+                      ) || ''
+                    )}
                     label={match.isThuis ? 'Hapjes Verzorgen' : 'Chauffeur'}
                     onChange={async (e) => {
                       const val = e.target.value;
